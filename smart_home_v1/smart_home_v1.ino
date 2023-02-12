@@ -12,6 +12,9 @@
 #define led_3 18
 #define led_4 5
 
+// flame 
+#define flame_pin 17
+int flame_sens;
 
 // MQ7
 #define mq7PIN 36
@@ -30,14 +33,15 @@ float Humidity;
 // LDR
 #define LDR_PIN 39 
 int LDR_percent;
+int val_LDR;
 
 // Buzzer
 #define buzzer_PIN 19
 
 // blynk 
 char auth[] = "C-TJypKMq1RGAirLIrOwCg1HoF3gxRMb";
-char ssid[] = "AMMAR";
-char pass[] = "90201897";
+char ssid[] = "iPhone";
+char pass[] = "100200800900";
 
 BlynkTimer timer;
 
@@ -48,9 +52,11 @@ BLYNK_WRITE(V4)
 }
 BLYNK_WRITE(V5)
 {
-  int val = param.asInt(); // Get value as integer
-  digitalWrite(led_2, !val);
-}
+  val_LDR = param.asInt(); // Get value as integer
+
+  } 
+    
+  
 BLYNK_WRITE(V6)
 {
   int val = param.asInt(); // Get value as integer
@@ -71,6 +77,7 @@ void sendtext()
   Blynk.virtualWrite(V1, Humidity); 
   Blynk.virtualWrite(V2, MQ7_percent); 
   Blynk.virtualWrite(V3, LDR_percent);
+  Blynk.virtualWrite(V8, flame_sens);
 }
 
 void setup()
@@ -88,6 +95,8 @@ void setup()
   digitalWrite(led_3, HIGH);
   digitalWrite(led_4, HIGH);
 
+  // flame setup
+  pinMode(flame_pin, INPUT);
 
   // dht setup
   pinMode(DHTPin, INPUT);
@@ -113,12 +122,18 @@ void loop()
   MQ7();
 
   // Gas alert
-  alert_gas();
+  alert();
+
+  // flame 
+  flame();
   
   Blynk.run();
   timer.run();
 }
-
+void flame(){
+  flame_sens = digitalRead(flame_pin);
+    
+}
 void DHT_11(){
   Temperature = dht.readTemperature(); // Gets the values of the temperature
   Humidity = dht.readHumidity(); // Gets the values of the humidity 
@@ -133,10 +148,21 @@ void MQ7(){
  void LDR(){
   int ldr_val = analogRead(LDR_PIN);
   LDR_percent = map(ldr_val, 0, 4094, 0, 100);
+  if (LDR_percent < 10){
+    digitalWrite(led_2, LOW);
+  }
+  else{
+    if (val_LDR == 0){
+    digitalWrite(led_2, HIGH);}
+    else
+    {
+      digitalWrite(led_2, LOW);
+      }
+  } 
  }
 
- void alert_gas(){
-  if (MQ7_percent > 80){
+ void alert(){
+  if (MQ7_percent > 40 or flame_sens == 1 ){
     digitalWrite(buzzer_PIN, HIGH);
   }
   else{
